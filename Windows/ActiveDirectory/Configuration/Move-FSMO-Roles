@@ -1,0 +1,8 @@
+#Moves all FSMO roles to selected DC
+
+$TargetDC = Read-Host -prompt 'Enter Hostname for Target DC'
+$credentials = Get-Credential
+
+Move-ADDirectoryServerOperationMasterRole -Identity $TargetDC `
+  -Credential $credentials `
+  -OperationMasterRole SchemaMaster,RIDMaster,InfrastructureMaster,DomainNamingMaster,PDCEmulator

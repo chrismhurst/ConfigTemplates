@@ -1,0 +1,7 @@
+#pulls all values for role holders and displays them
+
+Import-Module ActiveDirectory
+$roleHolders = Get-ADDomain | select-Object InfrastructureMaster,PDCEmulator,RIDMaster,DomainNamingMaster,SchemaMaster
+$roleHolders.DomainNamingMaster = (Get-ADForest | Select-Object DomainNamingMaster).DomainNamingMaster
+$roleHolders.SchemaMaster = (Get-ADForest | Select-Object SchemaMaster).SchemaMaster
+$roleHolders | fl
