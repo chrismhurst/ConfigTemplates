@@ -1,0 +1,9 @@
+# Get credentials and domain, then test a domain controller installation
+
+$credentials = get-credentials
+$domain = Read-Host -Prompt 'Domain to Join:'
+
+Test-ADDSDomainControllerInstallation
+  -domain $domain `
+  -InstallDns `
+  -credential $credentials

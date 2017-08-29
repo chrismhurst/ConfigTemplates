@@ -1,0 +1,25 @@
+#get credentials and domain, then install DC
+
+$credentials = get-credentials
+$domain = Read-Host -Prompt 'Domain to Join:'
+$directorySite = Read-Host -Prompt 'AD Site to Join:'
+$replicationSource = Read-Host -Prompt 'Domain Controller to Replicate from:'
+$pathDB = Read-Host -Prompt 'Path to NTDS Database (C:\Windows\NTDS):'
+$pathLogs = Read-Host -Prompt 'Path to NTDS Logs (C:\Windows\NTDS):'
+$pathSysvol = Read-Host -Prompt 'Path to SYSVOL share (C:\Windows\SYSVOL):'
+
+Install-ADDSDomainController `
+-NoGlobalCatalog:$false `
+-CreateDnsDelegation:$false `
+-Credential $credential `
+-CriticalReplicationOnly:$false `
+-DatabasePath $pathDB `
+-DomainName $domain `
+-InstallDns:$true `
+-LogPath $pathLogs `
+-NoRebootOnCompletion:$false `
+-ReplicationSourceDC $replicationSource `
+-SiteName $directorySite `
+-SysvolPath $pathSysvol `
+-Force:$true `
+-Verbose
