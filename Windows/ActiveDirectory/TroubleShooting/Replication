@@ -1,0 +1,5 @@
+#Force Replication (to/from current DC)
+repadmin /syncall /AED
+
+#Diagnose issues (/c runs non-default comprehensive tests)
+dcdiag /c
