@@ -1,0 +1,22 @@
+//Great resource: https://d0.awsstatic.com/whitepapers/workspaces/Best_Practices_for_Deploying_Amazon_WorkSpaces.pdf
+
+How many users total -
+  (We need enough IP space to accomodate IPs for current users, growth, and any supporting servers/services)
+
+How are users grouped -
+  (Do we need to break users up by department, MFA/no MFA, internal vs contractor/external, etc.)
+
+What services will each group access and where are they -
+  (You may need to build VPNs, VPC interconnects, etc.)
+
+How do you want to control ingress/egress VPC traffic -
+  (Route through datacenter, security groups, 3rd party firewalls, etc.)
+
+Local admin on which/any user groups -
+  (Can give to some/none)
+
+Which Region to use -
+  (This tool helps: https://clients.amazonworkspaces.com/Health.html)
+
+Directory Service Type -
+  (AD Connector w/ DCs in other VPC (MFA with Radius for entire AD Connector/subnets), or Managed AD with a trust (No MFA))

@@ -1,0 +1,4 @@
+VPC for authentication services
+  (AD, Radius, Certs, etc.)
+VPC(s) for Workspaces
+  (At least 2 subnets per type of workspace (types need different requirements (MFA) or are in different OU structures))
