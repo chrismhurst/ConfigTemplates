@@ -1,0 +1,9 @@
+[
+  {
+    "Description": "Host C Drive",
+    "Format": "vmdk",
+    "UserBucket": {
+        "S3Bucket": "cust-vm-import",
+        "S3Key": "folder/c-drive.vmdk"
+    }
+}]

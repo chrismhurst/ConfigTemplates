@@ -1,0 +1,8 @@
+//configure security credentials and region
+aws configure
+
+//start import
+aws ec2 import-image --description "luckieas01-8-29-2017" --license-type BYOL --disk-containers file:///home/chris/Consulting/Luckies/ImportFiles/luckieas01-disks.json
+
+//check on status
+aws ec2 describe-import-image-tasks
