@@ -1,9 +1,9 @@
 [
   {
-    "Description": "servername",
+    "Description": "machine-name",
     "Format": "ova",
     "UserBucket": {
-        "S3Bucket": "companyname-vm-import",
-        "S3Key": "servername.ova"
+        "S3Bucket": "company-vm-import-folder",
+        "S3Key": "ovaName.ova"
     }
 }]
