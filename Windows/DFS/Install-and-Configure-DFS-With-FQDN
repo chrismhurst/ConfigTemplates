@@ -1,0 +1,3 @@
+
+
+Set-DfsnServerConfiguration –ComputerName < ServerName > –UseFqdn $true
