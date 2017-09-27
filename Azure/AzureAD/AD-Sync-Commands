@@ -1,0 +1,8 @@
+//import module (on computer running AD Sync)
+Import-Module "C:\Program Files\Microsoft Azure AD Sync\Bin\ADSync\ADSync.psd1"
+
+//delta sync
+Start-ADSyncSyncCycle -PolicyType Delta
+
+//full sync
+Start-ADSyncSyncCycle -PolicyType Initial

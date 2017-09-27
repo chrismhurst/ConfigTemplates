@@ -1,0 +1,95 @@
+!!!!Rebuild NAT to use vasi https://www.cisco.com/c/en/us/support/docs/ip/network-address-translation-nat/200255-Configure-VRF-Aware-Software-Infrastruct.html!!!!
+interface vasileft 100
+ description inter-VRF tunnel interface (Global Side) to provide proper NAT translations for VRF WAN100
+ ip address 169.254.0.1 255.255.255.252
+ no ip redirects
+ no ip proxy-arp
+ ip nat inside
+ zone-member security INTRA
+ ip virtual-reassembly
+interface vasiright 100
+  description inter-VRF tunnel interface (WAN Side) to provide proper NAT translations for VRF WAN100
+  ip vrf forwarding WAN100
+  ip address 169.254.0.2 255.255.255.252
+  no ip redirects
+  no ip proxy-arp
+  ip nat inside
+  zone-member security WAN100
+  ip virtual-reassembly
+!
+interface vasileft 150
+ description inter-VRF tunnel interface (Global Side) to provide proper NAT translations for VRF WAN150
+ ip address 169.254.0.5 255.255.255.252
+ no ip redirects
+ no ip proxy-arp
+ ip nat inside
+ zone-member security INTRA
+ ip virtual-reassembly
+interface vasiright 150
+  description inter-VRF tunnel interface (WAN Side) to provide proper NAT translations for VRF WAN150
+  ip vrf forwarding WAN150
+  ip address 169.254.0.6 255.255.255.252
+  no ip redirects
+  no ip proxy-arp
+  ip nat inside
+  zone-member security WAN150
+  ip virtual-reassembly
+!
+!
+route-map GLOBAL_TO_WAN_SPECIAL permit 100
+match ip address GLOBAL_TO_WAN_SPECIAL_WAN100_TARGETS_ACL
+no set vrf WAN100
+set interface vasileft 100
+!
+route-map GLOBAL_TO_WAN_SPECIAL permit 150
+match ip address GLOBAL_TO_WAN_SPECIAL_WAN150_TARGETS_ACL
+no set vrf WAN150
+set interface vasileft 150
+!
+ip route 0.0.0.0 0.0.0.0 vasileft 100 169.254.0.2 9 track 149
+ip route 0.0.0.0 0.0.0.0 vasileft 150 169.254.0.6 14 track 199
+ip route vrf WAN100 10.0.0.0 255.0.0.0 vasiright 100 169.254.0.1
+ip route vrf WAN150 10.0.0.0 255.0.0.0 vasiright 150 169.254.0.5
+ip route vrf WAN100 172.16.0.0 255.240.0.0 vasiright 100 169.254.0.1
+ip route vrf WAN150 172.16.0.0 255.240.0.0 vasiright 150 169.254.0.5
+ip route vrf WAN100 192.168.0.0 255.255.0.0 vasiright 100 169.254.0.1
+ip route vrf WAN150 192.168.0.0 255.255.0.0 vasiright 150 169.254.0.5
+!
+interface GigabitEthernet0/0/1
+ ip vrf forwarding WAN100
+!
+interface GigabitEthernet0/1/0
+ ip vrf forwarding WAN150
+!
+interface Dialer1
+ ip vrf forwarding WAN150
+!
+object-group network WAN_NAT_EXCLUSIONS
+ description Add hosts to this object group to exclude them from WAN PAT. You would do this to have them use a different NAT pool.
+ host 10.0.31.155
+ host 10.0.31.156
+!
+ip access-list extended WAN100_NAT_ACL
+ deny   ip object-group WAN_NAT_EXCLUSIONS any
+ permit ip 10.0.0.0 0.255.255.255 any
+ permit ip 192.168.0.0 0.0.255.255 any
+ permit ip 172.16.0.0 0.15.255.255 any
+!
+route-map WAN100_PAT permit 10
+ match ip address WAN100_NAT_ACL
+ match interface GigabitEthernet0/0/1
+!
+ip nat inside source route-map WAN100_PAT interface GigabitEthernet0/0/1 vrf WAN100 overload
+!
+!
+ip access-list extended WAN150_NAT_ACL
+ deny   ip object-group WAN_NAT_EXCLUSIONS any
+ permit ip 10.0.0.0 0.255.255.255 any
+ permit ip 192.168.0.0 0.0.255.255 any
+ permit ip 172.16.0.0 0.15.255.255 any
+!
+route-map WAN150_PAT permit 10
+ match ip address WAN150_NAT_ACL
+ match interface GigabitEthernet0/1/0
+!
+ip nat inside source route-map WAN150_PAT interface Dialer1 vrf WAN150 overload
