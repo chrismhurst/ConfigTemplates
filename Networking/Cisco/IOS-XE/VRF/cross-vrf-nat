@@ -90,6 +90,6 @@ ip access-list extended WAN150_NAT_ACL
 !
 route-map WAN150_PAT permit 10
  match ip address WAN150_NAT_ACL
- match interface GigabitEthernet0/1/0
+ match interface Dialer1
 !
 ip nat inside source route-map WAN150_PAT interface Dialer1 vrf WAN150 overload
