@@ -1,0 +1,5 @@
+#change setting
+Set-OrganizationConfig -OAuth2ClientProfileEnabled $true
+
+#verify
+Get-OrganizationConfig | Select-Object name,OAuth2ClientProfileEnabled

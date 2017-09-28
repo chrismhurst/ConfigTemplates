@@ -1,0 +1,50 @@
+#############Mandatory######################
+#get credentials for on-prem admin account
+$onpremAdmin = Get-Credential
+
+
+############Base Commands##################
+#start from exchange online - suspend when ready
+New-MoveRequest -Remote -SuspendWhenReadyToComplete -Identity USERNAME -RemoteCredential $onpremAdmin -RemoteHostName (Get-MigrationEndpoint).RemoteServer -TargetDeliveryDomain (Get-IntraOrganizationConfiguration).OnlineTargetAddress -BadItemLimit 10 -BatchName (Get-Date)
+#
+#start from exchange online - sync ~30min until $date/time, then complete
+New-MoveRequest -Remote -SuspendWhenReadyToComplete -Identity USERNAME -RemoteCredential $onpremAdmin -RemoteHostName (Get-MigrationEndpoint).RemoteServer -TargetDeliveryDomain (Get-IntraOrganizationConfiguration).OnlineTargetAddress -BadItemLimit 10 -BatchName (Get-Date) -IncrementalSyncInterval 00:30:00
+
+
+#############Example Flow - Manual Complete##################
+#Make list of users to move based on object of first last names
+$usersToMove = @()
+foreach ($user in $usernames) {
+  $usersToMove += (Get-ADUser -Filter * | ? Name -like $user)
+}
+
+#Open a connection to Exchange Online, and import the commands
+Import-PSSession (New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://outlook.office365.com/powershell-liveid/ -Credential (Get-Credential) -Authentication Basic -AllowRedirection)
+
+#Export an object to CSV from the on-prem exchange with all exchange info (we'll use this after completing migrations)
+$mailboxInfo = Get-Mailbox | Select-Object *,RegionLanguage,RegionDateFormat,RegionTimeFormat,RegionTimeZone
+foreach ($mailbox in $mailboxInfo) {
+  $regionalConfig = Get-MailboxRegionalConfiguration $mailbox.SamAccountName
+  $mailbox.RegionLanguage = $regionalConfig.Language
+  $mailbox.RegionDateFormat = $regionalConfig.DateFormat
+  $mailbox.RegionTimeFormat = $regionalConfig.TimeFormat
+  $mailbox.RegionTimeZone = $regionalConfig.TimeZone
+}
+$mailboxInfo | Export-Csv \source\mailboxInfo.csv
+
+
+#Start the move request on each user - suspend before completion
+foreach ($user in $usersToMove) {
+  New-MoveRequest -Remote -SuspendWhenReadyToComplete -Identity $user.UserPrincipalName -RemoteCredential $onpremAdmin -RemoteHostName (Get-MigrationEndpoint).RemoteServer -TargetDeliveryDomain (Get-IntraOrganizationConfiguration).OnlineTargetAddress -BadItemLimit 10 -BatchName (Get-Date)
+}
+
+#complete each move request suspended before completion
+$readyToComplete = Get-MoveRequest | ? Status -like "AutoSuspended"
+foreach ($request in $readyToComplete) {
+  Resume-MoveRequest $request.Id
+}
+
+#Import the mailboxInfo CSV as on object on the prompt connected to Exchange Online
+$mailboxInfo = Import-Csv \source\mailboxInfo.csv
+
+#Copy the mailbox regional info over
