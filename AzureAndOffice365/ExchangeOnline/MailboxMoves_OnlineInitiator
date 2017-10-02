@@ -12,14 +12,19 @@ New-MoveRequest -Remote -SuspendWhenReadyToComplete -Identity USERNAME -RemoteCr
 
 
 #############Example Flow - Manual Complete##################
+
+#Import commands to run on local Exchange Server
+Import-PSSession (New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri http://SERVERNAME/PowerShell/ -Authentication Kerberos -Credential (Get-Credential))
+
+$usersToMove = Get-Mailbox -Server SERVERNAME
+
+or
+
 #Make list of users to move based on object of first last names
 $usersToMove = @()
 foreach ($user in $usernames) {
   $usersToMove += (Get-ADUser -Filter * | ? Name -like $user)
 }
-
-#Open a connection to Exchange Online, and import the commands
-Import-PSSession (New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://outlook.office365.com/powershell-liveid/ -Credential (Get-Credential) -Authentication Basic -AllowRedirection)
 
 #Export an object to CSV from the on-prem exchange with all exchange info (we'll use this after completing migrations)
 $mailboxInfo = Get-Mailbox | Select-Object *,RegionLanguage,RegionDateFormat,RegionTimeFormat,RegionTimeZone
@@ -32,6 +37,23 @@ foreach ($mailbox in $mailboxInfo) {
 }
 $mailboxInfo | Export-Csv \source\mailboxInfo.csv
 
+#Remove Session for local Exchange Server
+Remove-PSSession NUMBER
+
+#Import the MSOnline Module
+Import-Module MSOnline
+
+#Connect to MSOnline
+Connect-MsolService -Credential (Get-Credential)
+
+#Assign out the licenses
+foreach ($user in $usersToMove) {
+  Set-MsolUser -UserPrincipalName $user.UserPrincipalName -UsageLocation US
+  Set-MsolUserLicense -UserPrincipalName $user.UserPrincipalName -AddLicenses "luckieandcompany:O365_BUSINESS_PREMIUM"
+}
+
+#Open a connection to Exchange Online, and import the commands
+Import-PSSession (New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://outlook.office365.com/powershell-liveid/ -Credential (Get-Credential) -Authentication Basic -AllowRedirection)
 
 #Start the move request on each user - suspend before completion
 foreach ($user in $usersToMove) {
@@ -48,3 +70,10 @@ foreach ($request in $readyToComplete) {
 $mailboxInfo = Import-Csv \source\mailboxInfo.csv
 
 #Copy the mailbox regional info over
+foreach ($user in $usersToMove) {
+  foreach ($mailbox in $mailboxInfo) {
+    if($mailbox.SamAccountName -like $user.SamAccountName) {
+      Set-MailboxRegionalConfiguration -Identity $user.SamAccountName -Language $mailbox.RegionLanguage -DateFormat $mailbox.RegionDateFormat -TimeFormat $mailbox.RegionTimeFormat -TimeZone $mailbox.RegionTimeZone
+    }
+  }
+}
